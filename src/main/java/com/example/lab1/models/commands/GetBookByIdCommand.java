@@ -9,6 +9,6 @@ public class GetBookByIdCommand implements Command {
 
     @Override
     public Object execute() {
-        return context.getBooksService().getBook(context.getId());
+        return context.getBooksService().getBookById(context.getId());
     }
 }

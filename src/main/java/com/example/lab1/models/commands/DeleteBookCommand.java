@@ -9,6 +9,7 @@ public class DeleteBookCommand implements Command {
 
     @Override
     public Object execute() {
-        return context.getBooksService().deleteBook(context.getId());
+        context.getBooksService().deleteBook(context.getId());
+        return "Book deleted successfully!";
     }
 }

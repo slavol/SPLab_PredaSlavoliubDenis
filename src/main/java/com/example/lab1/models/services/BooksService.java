@@ -1,41 +1,39 @@
 package com.example.lab1.models.services;
 
+import com.example.lab1.models.entities.Book;
+import com.example.lab1.models.persistence.BooksRepository;
 import org.springframework.stereotype.Service;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class BooksService {
-    private final Map<Integer, String> books = new HashMap<>();
-    private int currentId = 1;
+    private final BooksRepository booksRepository;
 
-    public List<String> getAllBooks() {
-        return new ArrayList<>(books.values());
+    public BooksService(BooksRepository booksRepository) {
+        this.booksRepository = booksRepository;
     }
 
-    public String getBook(int id) {
-        return books.get(id);
+    public List<Book> getAllBooks() {
+        return booksRepository.findAll();
     }
 
-    public String addBook(String title) {
-        books.put(currentId, title);
-        return "Book added with id=" + currentId++;
+    public Optional<Book> getBookById(Integer id) {
+        return booksRepository.findById(id);
     }
 
-    public String updateBook(int id, String title) {
-        if (books.containsKey(id)) {
-            books.put(id, title);
-            return "Book with id=" + id + " updated.";
-        } else {
-            return "Book not found.";
-        }
+    public Book addBook(Book book) {
+        return booksRepository.save(book);
     }
 
-    public String deleteBook(int id) {
-        if (books.containsKey(id)) {
-            books.remove(id);
-            return "Book with id=" + id + " deleted.";
-        } else {
-            return "Book not found.";
-        }
+    public Book updateBook(Integer id, Book newBook) {
+        return booksRepository.findById(id).map(book -> {
+            book.setTitle(newBook.getTitle());
+            return booksRepository.save(book);
+        }).orElseGet(() -> booksRepository.save(newBook));
+    }
+
+    public void deleteBook(Integer id) {
+        booksRepository.deleteById(id);
     }
 }

@@ -1,9 +1,10 @@
 package com.example.lab1.models.controllers;
 
-import com.example.lab1.models.commands.*;
+import com.example.lab1.models.entities.Book;
 import com.example.lab1.models.services.BooksService;
 import org.springframework.web.bind.annotation.*;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/books")
@@ -16,32 +17,28 @@ public class BooksController {
     }
 
     @GetMapping
-    public List<String> getAllBooks() {
-        CommandContext context = new CommandContext(booksService, null, null);
-        return (List<String>) new GetAllBooksCommand(context).execute();
+    public List<Book> getAllBooks() {
+        return booksService.getAllBooks();
     }
 
     @GetMapping("/{id}")
-    public Object getBookById(@PathVariable int id) {
-        CommandContext context = new CommandContext(booksService, null, id);
-        return new GetBookByIdCommand(context).execute();
+    public Optional<Book> getBookById(@PathVariable Integer id) {
+        return booksService.getBookById(id);
     }
 
     @PostMapping
-    public Object createBook(@RequestBody String title) {
-        CommandContext context = new CommandContext(booksService, title, null);
-        return new CreateBookCommand(context).execute();
+    public Book createBook(@RequestBody Book book) {
+        return booksService.addBook(book);
     }
 
     @PutMapping("/{id}")
-    public Object updateBook(@PathVariable int id, @RequestBody String title) {
-        CommandContext context = new CommandContext(booksService, title, id);
-        return new UpdateBookCommand(context).execute();
+    public Book updateBook(@PathVariable Integer id, @RequestBody Book book) {
+        return booksService.updateBook(id, book);
     }
 
     @DeleteMapping("/{id}")
-    public Object deleteBook(@PathVariable int id) {
-        CommandContext context = new CommandContext(booksService, null, id);
-        return new DeleteBookCommand(context).execute();
+    public String deleteBook(@PathVariable Integer id) {
+        booksService.deleteBook(id);
+        return "Book deleted successfully!";
     }
 }

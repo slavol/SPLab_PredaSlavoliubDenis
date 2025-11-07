@@ -1,5 +1,7 @@
 package com.example.lab1.models.commands;
 
+import com.example.lab1.models.entities.Book;
+
 public class CreateBookCommand implements Command {
     private final CommandContext context;
 
@@ -10,6 +12,7 @@ public class CreateBookCommand implements Command {
     @Override
     public Object execute() {
         String title = (String) context.getData();
-        return context.getBooksService().addBook(title);
+        Book book = new Book(title);
+        return context.getBooksService().addBook(book);
     }
 }
