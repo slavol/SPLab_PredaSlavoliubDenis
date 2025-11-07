@@ -1,7 +1,11 @@
 package com.example.lab1.models;
 
-public class Paragraph implements Element{
+import lombok.Setter;
+
+public class Paragraph implements Element {
     private String text;
+    @Setter
+    private AlignStrategy alignStrategy;
 
     public Paragraph(String text) {
         this.text = text;
@@ -9,6 +13,10 @@ public class Paragraph implements Element{
 
     @Override
     public void print() {
-        System.out.println("Paragraph: " + text);
+        if (alignStrategy != null) {
+            alignStrategy.render(text);
+        } else {
+            System.out.println("Paragraph: " + text);
+        }
     }
 }
