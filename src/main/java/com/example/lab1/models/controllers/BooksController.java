@@ -2,7 +2,9 @@ package com.example.lab1.models.controllers;
 
 import com.example.lab1.models.entities.Book;
 import com.example.lab1.models.services.BooksService;
+import com.example.lab1.models.observer.AllBooksSubject;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -11,9 +13,11 @@ import java.util.Optional;
 public class BooksController {
 
     private final BooksService booksService;
+    private final AllBooksSubject allBooksSubject;
 
-    public BooksController(BooksService booksService) {
+    public BooksController(BooksService booksService, AllBooksSubject allBooksSubject) {
         this.booksService = booksService;
+        this.allBooksSubject = allBooksSubject;
     }
 
     @GetMapping
@@ -28,7 +32,9 @@ public class BooksController {
 
     @PostMapping
     public Book createBook(@RequestBody Book book) {
-        return booksService.addBook(book);
+        Book savedBook = booksService.addBook(book);
+        allBooksSubject.add(savedBook);   // 🔔 trimite notificarea SSE!
+        return savedBook;
     }
 
     @PutMapping("/{id}")
