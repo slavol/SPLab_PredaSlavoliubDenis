@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <title>Store Inventory Manager</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f3f4f7;
+        }
+        .card {
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+        .fade-out {
+            animation: fadeOut 2s forwards;
+        }
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            100% { opacity: 0; display: none; }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container mt-5">
+
+    <h1 class="text-center mb-4 fw-bold">📦 Store Inventory Manager</h1>
+
+    <!-- Alerts -->
+    <div id="alert-container"></div>
+
+    <!-- Add Product Card -->
+    <div class="card p-4 mb-4">
+        <h4 class="mb-3">➕ Adaugă un produs</h4>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <input id="name" class="form-control" placeholder="Nume produs">
+            </div>
+            <div class="col-md-4">
+                <input id="price" class="form-control" placeholder="Preț" type="number" step="0.01">
+            </div>
+            <div class="col-md-4">
+                <input id="quantity" class="form-control" placeholder="Cantitate" type="number">
+            </div>
+        </div>
+        <button class="btn btn-success mt-3" onclick="addProduct()">Adaugă produs</button>
+    </div>
+
+    <!-- Search + Refresh -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <input id="search" class="form-control w-50" placeholder="Caută produse..." oninput="loadProducts()">
+        <button class="btn btn-primary" onclick="loadProducts()">🔄 Refresh</button>
+    </div>
+
+    <!-- Products Table -->
+    <div class="card p-4">
+        <h4 class="mb-3">📋 Lista produselor</h4>
+
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Nume</th>
+                <th>
+                    Preț
+                    <button class="btn btn-sm btn-light" onclick="sortByPrice()">↕</button>
+                </th>
+                <th>
+                    Cantitate
+                    <button class="btn btn-sm btn-light" onclick="sortByQuantity()">↕</button>
+                </th>
+                <th>Acțiuni</th>
+            </tr>
+            </thead>
+            <tbody id="productTable"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">✏️ Editează produsul</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <input id="editId" type="hidden">
+
+                <label>Nume:</label>
+                <input id="editName" class="form-control mb-2">
+
+                <label>Preț:</label>
+                <input id="editPrice" type="number" step="0.01" class="form-control mb-2">
+
+                <label>Cantitate:</label>
+                <input id="editQuantity" type="number" class="form-control">
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+                <button class="btn btn-warning" onclick="saveEdit()">Salvează</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+
+    let products = [];
+    let sortPriceAsc = true;
+    let sortQuantityAsc = true;
+
+    function showAlert(msg, type="success") {
+        const alert = document.createElement("div");
+        alert.className = `alert alert-${type} mt-2`;
+        alert.innerText = msg;
+        document.getElementById("alert-container").appendChild(alert);
+        setTimeout(() => alert.classList.add("fade-out"), 2000);
+    }
+
+    async function loadProducts() {
+        const res = await fetch("/products");
+        products = await res.json();
+
+        const search = document.getElementById("search").value.toLowerCase();
+
+        const table = document.getElementById("productTable");
+        table.innerHTML = "";
+
+        products
+            .filter(p => p.name.toLowerCase().includes(search))
+            .forEach(p => {
+                table.innerHTML += `
+                    <tr>
+                        <td>${p.id}</td>
+                        <td>${p.name}</td>
+                        <td>${p.price}</td>
+                        <td>${p.quantity}</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="openEditModal(${p.id})">Editează</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">Șterge</button>
+                        </td>
+                    </tr>
+                `;
+            });
+    }
+
+    async function addProduct() {
+        const product = {
+            name: name.value,
+            price: parseFloat(price.value),
+            quantity: parseInt(quantity.value)
+        };
+
+        if (!product.name || isNaN(product.price) || isNaN(product.quantity)) {
+            showAlert("Completează toate câmpurile!", "danger");
+            return;
+        }
+
+        await fetch("/products", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(product)
+        });
+
+        showAlert("Produs adăugat!");
+        loadProducts();
+    }
+
+    function openEditModal(id) {
+        const p = products.find(x => x.id === id);
+
+        editId.value = p.id;
+        editName.value = p.name;
+        editPrice.value = p.price;
+        editQuantity.value = p.quantity;
+
+        new bootstrap.Modal(document.getElementById("editModal")).show();
+    }
+
+    async function saveEdit() {
+        const updated = {
+            name: editName.value,
+            price: parseFloat(editPrice.value),
+            quantity: parseInt(editQuantity.value)
+        };
+
+        await fetch(`/products/${editId.value}`, {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(updated)
+        });
+
+        showAlert("Produs actualizat!");
+        loadProducts();
+    }
+
+    async function deleteProduct(id) {
+        if (!confirm("Sigur vrei să ștergi acest produs?")) return;
+
+        await fetch(`/products/${id}`, {
+            method: "DELETE"
+        });
+
+        showAlert("Produs șters!", "warning");
+        loadProducts();
+    }
+
+    function sortByPrice() {
+        products.sort((a, b) => sortPriceAsc ? a.price - b.price : b.price - a.price);
+        sortPriceAsc = !sortPriceAsc;
+        renderSorted();
+    }
+
+    function sortByQuantity() {
+        products.sort((a, b) => sortQuantityAsc ? a.quantity - b.quantity : b.quantity - a.quantity);
+        sortQuantityAsc = !sortQuantityAsc;
+        renderSorted();
+    }
+
+    function renderSorted() {
+        const table = document.getElementById("productTable");
+        table.innerHTML = "";
+        products.forEach(p => {
+            table.innerHTML += `
+                <tr>
+                    <td>${p.id}</td>
+                    <td>${p.name}</td>
+                    <td>${p.price}</td>
+                    <td>${p.quantity}</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm" onclick="openEditModal(${p.id})">Editează</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">Șterge</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    loadProducts();
+
+</script>
+
+</body>
+</html>
